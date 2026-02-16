@@ -1,0 +1,104 @@
+name: Generate Atlas for GitHub Pages
+
+on:
+  push:
+    branches:
+      - images      # Déclenche sur les commits de la branche images (contient les images sources)
+      - main        # Déclenche aussi sur main pour les mises à jour du workflow
+    paths:
+      - 'images/**'  # Surveille les changements dans le dossier images
+      - '.github/workflows/generate-atlas.yml'
+  workflow_dispatch:  # Permet de déclencher manuellement
+
+# Définir les permissions nécessaires pour GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Éviter les exécutions concurrentes
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  generate-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Récupère tout l'historique
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Python dependencies
+        run: |
+          cd Packages/nappollen.udon-poster/Generator
+          pip install -r requirements.txt
+      
+      - name: Check for source images
+        id: check_images
+        run: |
+          cd Packages/nappollen.udon-poster/Generator/CI
+          chmod +x check_images.sh
+          OUTPUT=$(./check_images.sh)
+          
+          if echo "$OUTPUT" | grep -q "images_exist=true"; then
+            echo "images_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "images_exist=false" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "$OUTPUT" | grep -v "images_exist="
+      
+      - name: Generate atlases from source images
+        if: steps.check_images.outputs.images_exist == 'true'
+        run: |
+          cd Packages/nappollen.udon-poster/Generator
+          
+          echo "🎨 Génération des atlas à partir des images sources..."
+          python CI/generate_atlas_ci.py generate --input ../../../images --output output_atlases
+      
+      - name: Generate static version
+        if: steps.check_images.outputs.images_exist == 'true'
+        run: |
+          cd Packages/nappollen.udon-poster/Generator
+          
+          echo "📦 Génération de la version statique pour GitHub Pages..."
+          python CI/generate_atlas_ci.py static --output output_atlases --static-output output_static
+      
+      - name: Create empty atlas (fallback)
+        if: steps.check_images.outputs.images_exist == 'false'
+        run: |
+          cd Packages/nappollen.udon-poster/Generator
+          python CI/create_index.py empty-atlas --output output_static
+      
+      - name: Create index.html for GitHub Pages
+        run: |
+          cd Packages/nappollen.udon-poster/Generator
+          python CI/create_index.py create-index --output output_static
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'Packages/nappollen.udon-poster/Generator/output_static'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      
+      - name: Display deployment info
+        run: |
+          echo "🎉 Déploiement réussi!"
+          echo "📍 URL de base: ${{ steps.deployment.outputs.page_url }}"
+          echo "📄 Atlas JSON: ${{ steps.deployment.outputs.page_url }}atlas.json"
+          echo ""
+          echo "Utilisez cette URL dans votre monde VRChat!"
