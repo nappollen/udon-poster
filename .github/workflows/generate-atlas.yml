@@ -3,7 +3,7 @@ name: Generate Atlas for GitHub Pages
 on:
   push:
     branches:
-      - images      # Déclenche sur les commits de la branche images (contient les images sources)
+      - public      # Déclenche sur les commits de la branche public (contient les images et assets)
       - main        # Déclenche aussi sur main pour les mises à jour du workflow
   workflow_dispatch:  # Permet de déclencher manuellement
 
@@ -29,11 +29,11 @@ jobs:
           ref: main
           path: main
       
-      - name: Checkout images branch (images sources)
+      - name: Checkout public branch (images et assets)
         uses: actions/checkout@v4
         with:
-          ref: images
-          path: images
+          ref: public
+          path: public
           fetch-depth: 0
       
       - name: Set up Python
@@ -49,7 +49,7 @@ jobs:
       - name: Check for source images
         id: check_images
         run: |
-          if [ -d "images" ] && [ "$(ls -A images 2>/dev/null | grep -v '.git' | grep -v 'README')" ]; then
+          if [ -d "public/images" ] && [ "$(ls -A public/images 2>/dev/null | grep -v '.git' | grep -v 'README' | grep -v 'metadata.json')" ]; then
             echo "images_exist=true" >> $GITHUB_OUTPUT
             echo "✅ Dossier images trouvé avec des fichiers"
           else
@@ -63,7 +63,7 @@ jobs:
           cd main/Generator
           
           echo "🎨 Génération des atlas à partir des images sources..."
-          python CI/generate_atlas_ci.py generate --input ../../images --output output_atlases
+          python CI/generate_atlas_ci.py generate --input ../../public/images --output output_atlases
       
       - name: Generate static version
         if: steps.check_images.outputs.images_exist == 'true'
@@ -73,16 +73,18 @@ jobs:
           echo "📦 Génération de la version statique pour GitHub Pages..."
           python CI/generate_atlas_ci.py static --output output_atlases --static-output output_static
       
-      - name: Create empty atlas (fallback)
-        if: steps.check_images.outputs.images_exist == 'false'
+      - name: Copy index.html and public assets
         run: |
-          cd main/Generator
-          python CI/create_index.py empty-atlas --output output_static
-      
-      - name: Create index.html for GitHub Pages
-        run: |
-          cd main/Generator
-          python CI/create_index.py create-index --output output_static
+          echo "📄 Copie de index.html..."
+          cp main/index.html main/Generator/output_static/
+          
+          echo "📄 Copie des assets publics..."
+          if [ -d "public/public" ]; then
+            cp -r public/public/* main/Generator/output_static/ 2>/dev/null || true
+            echo "✅ Assets publics copiés"
+          else
+            echo "⚠️ Aucun dossier public/public/ trouvé"
+          fi
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
