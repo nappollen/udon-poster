@@ -25,6 +25,7 @@ jobs:
     outputs:
       num_atlases: ${{ steps.generate.outputs.num_atlases }}
       num_images: ${{ steps.generate.outputs.num_images }}
+      downscales: ${{ steps.generate.outputs.downscales }}
     
     steps:
       - name: Checkout main branch (code)
@@ -100,7 +101,7 @@ jobs:
     needs: generate-atlas
     runs-on: ubuntu-latest
     outputs:
-      zip_size: ${{ steps.create_zip.outputs.zip_size }}
+      zip_size: ${{ steps.calculate_size.outputs.zip_size }}
     
     steps:
       - name: Download static output
@@ -109,21 +110,25 @@ jobs:
           name: atlas-static
           path: atlas-static
       
-      - name: Create ZIP archive
-        id: create_zip
+      - name: Prepare atlas-only package
         run: |
-          cd atlas-static
-          zip -r ../atlas.zip .
-          cd ..
-          FILE_SIZE=$(du -h atlas.zip | cut -f1)
-          echo "📦 Archive créée: $FILE_SIZE"
-          echo "zip_size=$FILE_SIZE" >> $GITHUB_OUTPUT
+          mkdir -p atlas-package
+          cp atlas-static/atlas.json atlas-package/
+          cp -r atlas-static/atlas atlas-package/
+          echo "📦 Contenu de l'artifact: atlas.json et dossier atlas/"
       
-      - name: Upload ZIP artifact
+      - name: Calculate size
+        id: calculate_size
+        run: |
+          SIZE=$(du -sh atlas-package | cut -f1)
+          echo "📦 Taille du contenu: $SIZE"
+          echo "zip_size=$SIZE" >> $GITHUB_OUTPUT
+      
+      - name: Upload Atlas artifact
         uses: actions/upload-artifact@v4
         with:
           name: atlas
-          path: atlas.zip
+          path: atlas-package/
           retention-days: 90
 
   deploy-pages:
@@ -167,9 +172,19 @@ jobs:
     if: always()
     
     steps:
+      - name: Get artifact URL
+        id: artifact_url
+        run: |
+          ARTIFACT_URL=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+            | jq -r '.artifacts[] | select(.name=="atlas") | "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/\(.id)"')
+          echo "url=$ARTIFACT_URL" >> $GITHUB_OUTPUT
+          echo "📦 URL artifact: $ARTIFACT_URL"
+      
       - name: Create consolidated summary
         run: |
           PAGE_URL="${{ needs.deploy-pages.outputs.page_url }}"
+          ARTIFACT_URL="${{ steps.artifact_url.outputs.url }}"
           
           # Résumé consolidé unique
           cat >> $GITHUB_STEP_SUMMARY << EOF
@@ -179,7 +194,7 @@ jobs:
           
           - **Images traitées**: ${{ needs.generate-atlas.outputs.num_images }}
           - **Atlas générés**: ${{ needs.generate-atlas.outputs.num_atlases }}
-          - **Niveaux de downscale**: 1×, 2×, 4×, 8×, 16×
+          - **Niveaux de downscale**: ${{ needs.generate-atlas.outputs.downscales }}
           - **Taille de l'archive**: ${{ needs.create-archive.outputs.zip_size }}
           
           ## 🌐 Déploiement
@@ -188,7 +203,7 @@ jobs:
           |------|-----|
           | **🌍 Site web** | [$PAGE_URL]($PAGE_URL) |
           | **📄 API Atlas** | [${PAGE_URL}atlas.json](${PAGE_URL}atlas.json) |
-          | **📦 Archive ZIP** | [Télécharger](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
+          | **📦 Archive ZIP** | [Télécharger]($ARTIFACT_URL) |
           
           ## 🎮 Utilisation dans VRChat
           

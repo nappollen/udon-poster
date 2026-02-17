@@ -100,8 +100,13 @@ def generate_atlases_ci(input_folder: str, output_folder: str):
     num_atlases = len(atlas_data.get('atlases', []))
     num_images = atlas_data.get('total_images', 0)
     
+    # Extraire les niveaux de downscale uniques des atlas
+    scales = sorted(set(atlas.get('scale', 1) for atlas in atlas_data.get('atlases', [])))
+    scales_str = ', '.join(f"{s}×" for s in scales)
+    
     github_output('num_atlases', str(num_atlases))
     github_output('num_images', str(num_images))
+    github_output('downscales', scales_str)
     
     return atlas_data
 
