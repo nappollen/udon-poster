@@ -12,8 +12,6 @@ permissions:
 jobs:
   deploy:
     uses: nappollen/udon-poster/.github/workflows/deploy.yml@main
-    with:
-      input: "images"
     permissions:
       contents: read
       pages: write
