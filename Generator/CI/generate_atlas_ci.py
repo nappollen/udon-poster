@@ -20,6 +20,24 @@ def github_endgroup():
         print("::endgroup::", flush=True)
 
 
+def github_summary(content):
+    """Ajoute du contenu au résumé GitHub Actions (visible dans l'interface)"""
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        summary_file = os.environ.get('GITHUB_STEP_SUMMARY')
+        if summary_file:
+            with open(summary_file, 'a', encoding='utf-8') as f:
+                f.write(content + '\n')
+
+
+def github_output(name, value):
+    """Définit une sortie pour GitHub Actions"""
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        output_file = os.environ.get('GITHUB_OUTPUT')
+        if output_file:
+            with open(output_file, 'a', encoding='utf-8') as f:
+                f.write(f"{name}={value}\n")
+
+
 def progress_callback(step, total, message):
     """Callback pour afficher la progression dans GitHub Actions"""
     percentage = int((step / total) * 100) if total > 0 else 0
@@ -77,6 +95,26 @@ def generate_atlases_ci(input_folder: str, output_folder: str):
     if not atlas_data:
         print("❌ Échec de la génération des atlas")
         sys.exit(1)
+    
+    # Créer le résumé pour GitHub Actions
+    num_atlases = len(atlas_data.get('atlases', []))
+    num_images = atlas_data.get('total_images', 0)
+    
+    summary = f"""## 🎨 Génération des atlas terminée
+    
+### 📊 Statistiques
+- **Images traitées**: {num_images}
+- **Atlas générés**: {num_atlases}
+- **Niveaux de downscale**: 1×, 2×, 4×, 8×, 16×
+
+### 📁 Fichiers générés
+- `manifest.json` - Métadonnées des atlas
+- Fichiers d'atlas aux différentes résolutions
+"""
+    
+    github_summary(summary)
+    github_output('num_atlases', str(num_atlases))
+    github_output('num_images', str(num_images))
     
     return atlas_data
 
@@ -164,6 +202,38 @@ def generate_static_ci(atlas_folder: str, output_static_folder: str):
     
     atlas_data['metadata']['base_url'] = github_pages_url
     atlas_data['metadata']['ci'] = ci_metadata
+    # Créer le résumé pour GitHub Actions
+    num_atlases = len(result['compressed_data'].get('atlases', []))
+    num_images = len(result['compressed_data'].get('mapping', []))
+    
+    # Récupérer l'URL GitHub Pages
+    github_repo = os.environ.get('GITHUB_REPOSITORY', '')
+    github_pages_url = ''
+    if github_repo:
+        parts = github_repo.split('/')
+        if len(parts) == 2:
+            github_pages_url = f"https://{parts[0]}.github.io/{parts[1]}/"
+    
+    summary = f"""## 📦 Version statique générée
+    
+### 📊 Contenu
+- **Images**: {num_images}
+- **Atlas**: {num_atlases}
+
+### 🔗 Fichiers générés
+- [`atlas.json`]({github_pages_url}atlas.json) - API JSON des atlas
+- `atlas/` - Images d'atlas (indexées par numéro)
+
+### 🌐 URLs d'accès
+- **Base URL**: [{github_pages_url}]({github_pages_url})
+- **API Atlas**: [{github_pages_url}atlas.json]({github_pages_url}atlas.json)
+
+> ✅ Prêt pour le déploiement sur GitHub Pages!
+"""
+    
+    github_summary(summary)
+    github_output('atlas_url', f"{github_pages_url}atlas.json")
+    
     
     print(f"✅ Métadonnées CI/CD ajoutées:")
     print(f"   - Base URL: {github_pages_url}")

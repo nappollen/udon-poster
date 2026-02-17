@@ -108,7 +108,20 @@ jobs:
           cd atlas-static
           zip -r ../atlas.zip .
           cd ..
-          echo "📦 Archive créée: $(du -h atlas.zip | cut -f1)"
+          FILE_SIZE=$(du -h atlas.zip | cut -f1)
+          echo "📦 Archive créée: $FILE_SIZE"
+          
+          # Ajouter au résumé GitHub Actions
+          echo "## 📦 Archive ZIP créée" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Informations" >> $GITHUB_STEP_SUMMARY
+          echo "- **Taille**: $FILE_SIZE" >> $GITHUB_STEP_SUMMARY
+          echo "- **Nom**: \`atlas.zip\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 Téléchargement" >> $GITHUB_STEP_SUMMARY
+          echo "L'archive sera disponible dans les **Artifacts** de ce workflow pendant 90 jours." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> ✅ Contient tous les fichiers statiques des posters" >> $GITHUB_STEP_SUMMARY
       
       - name: Upload ZIP artifact
         uses: actions/upload-artifact@v4
