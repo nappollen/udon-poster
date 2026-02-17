@@ -32,7 +32,7 @@ on:
     outputs:
       page-url:
         description: "URL of the deployed GitHub Pages site"
-        value: ${{ jobs.deploy-pages.outputs.page_url }}
+        value: ${{ jobs.pages.outputs.page_url }}
       num-atlases:
         description: "Number of generated atlases"
         value: ${{ jobs.generate.outputs.num_atlases }}
@@ -142,7 +142,7 @@ jobs:
           path: generator/Generator/output_static
           retention-days: 1 # Temporary, only to pass between jobs
 
-  create-archive:
+  archive:
     name: Create Atlas Archive
     needs: generate
     runs-on: ubuntu-latest
@@ -178,7 +178,7 @@ jobs:
           path: atlas-package/
           retention-days: 90
 
-  deploy-pages:
+  pages:
     name: Deploy to GitHub Pages
     needs: generate
     if: ${{ inputs.pages != false }}
@@ -215,7 +215,7 @@ jobs:
 
   summary:
     name: Generate Summary
-    needs: [generate, create-archive, deploy-pages]
+    needs: [generate, archive, pages]
     runs-on: ubuntu-latest
     if: ${{ always() && inputs.summary != false }}
 
@@ -231,7 +231,7 @@ jobs:
 
       - name: Create consolidated summary
         run: |
-          PAGE_URL="${{ needs.deploy-pages.outputs.page_url }}"
+          PAGE_URL="${{ needs.pages.outputs.page_url }}"
           ARTIFACT_URL="${{ steps.artifact_url.outputs.url }}"
 
           # Single consolidated summary
@@ -242,7 +242,7 @@ jobs:
           - **Processed images**: ${{ needs.generate.outputs.num_images }}
           - **Generated atlases**: ${{ needs.generate.outputs.num_atlases }}
           - **Downscale levels**: ${{ needs.generate.outputs.downscales }}
-          - **Archive size**: ${{ needs.create-archive.outputs.zip_size }}B
+          - **Archive size**: ${{ needs.archive.outputs.zip_size }}B
 
           ## Deployment
 
