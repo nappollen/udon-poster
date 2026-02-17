@@ -5,6 +5,15 @@ on:
     branches:
       - images      # Déclenche sur les commits de la branche images (contient les images sources)
       - main        # Déclenche aussi sur main pour les mises à jour du workflow
+    paths:
+      - '**/*.png'
+      - '**/*.jpg'
+      - '**/*.jpeg'
+      - '**/*.gif'
+      - '**/*.bmp'
+      - '**/*.webp'
+      - 'metadata.json'
+      - '.github/workflows/**'
   workflow_dispatch:  # Permet de déclencher manuellement
 
 # Définir les permissions nécessaires pour GitHub Pages
@@ -52,26 +61,26 @@ jobs:
           if [ -d "images" ] && [ "$(ls -A images 2>/dev/null | grep -v '.git' | grep -v 'README')" ]; then
             echo "images_exist=true" >> $GITHUB_OUTPUT
             echo "✅ Dossier images trouvé avec des fichiers"
+          else
             echo "images_exist=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Aucune image trouvée"
           fi
-          
-          echo "$OUTPUT" | grep -v "images_exist="
       
       - name: Generate atlases from source images
         if: steps.check_images.outputs.images_exist == 'true'
         run: |
-          cd Generator
+          cd main/Generator
           
           echo "🎨 Génération des atlas à partir des images sources..."
-          python CI/generate_atlas_ci.py generate --input ../images --output output_atlases
+          python CI/generate_atlas_ci.py generate --input ../../images --output output_atlases
       
       - name: Generate static version
         if: steps.check_images.outputs.images_exist == 'true'
         run: |
-          cd main/main/Generator
+          cd main/Generator
           
-          echo "🎨 Génération des atlas à partir des images sources..."
-          python CI/generate_atlas_ci.py generate --input ../utput_atlases --static-output output_static
+          echo "📦 Génération de la version statique pour GitHub Pages..."
+          python CI/generate_atlas_ci.py static --output output_atlases --static-output output_static
       
       - name: Create empty atlas (fallback)
         if: steps.check_images.outputs.images_exist == 'false'
