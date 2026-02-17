@@ -55,7 +55,7 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 7530460361025887041}
-  baseUrl: 
+  baseUrl: https://nappollen.github.io/udon-poster/
   atlasCount: -1
   metaUrl:
     url: 

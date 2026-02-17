@@ -10,21 +10,23 @@ using VRC.Udon.Common.Interfaces;
 namespace Nappollen.UdonPoster {
 	public class PosterManager : UdonSharpBehaviour {
 		#if UNITY_EDITOR
-		public string baseUrl    = null;
-		public int    atlasCount = -1;
+		public string baseUrl = null;
+		public int atlasCount = -1;
 		#endif
 
-		[HideInInspector] public VRCUrl             metaUrl;
-		[HideInInspector] public VRCUrl[]           atlasUrls;
-		[HideInInspector] public Poster[]           posters;
-		[HideInInspector] public Material           material;
-		private                  VRCImageDownloader m;
+		[HideInInspector] public VRCUrl metaUrl;
+		[HideInInspector] public VRCUrl[] atlasUrls;
+		[HideInInspector] public Poster[] posters;
+		[HideInInspector] public Material material;
+		private VRCImageDownloader m;
 
 		public override void OnPlayerJoined(VRCPlayerApi player) {
-			if (!player.isLocal) return;
+			if (!player.isLocal)
+				return;
 			// ReSharper disable once SuspiciousTypeConversion.Global
 			VRCStringDownloader.LoadUrl(metaUrl, (IUdonEventReceiver)this);
-			if (m != null) m.Dispose();
+			if (m != null)
+				m.Dispose();
 			m = new VRCImageDownloader();
 		}
 
@@ -49,7 +51,8 @@ namespace Nappollen.UdonPoster {
 		}
 
 		public override void OnImageLoadSuccess(IVRCImageDownload result) {
-			if (!IsAtlasUrl(result.Url)) return;
+			if (!IsAtlasUrl(result.Url))
+				return;
 			NextUrl();
 			var texture    = result.Result;
 			var atlasIndex = GetAtlasIndex(result.Url);
@@ -58,7 +61,8 @@ namespace Nappollen.UdonPoster {
 		}
 
 		public override void OnImageLoadError(IVRCImageDownload result) {
-			if (!IsAtlasUrl(result.Url)) return;
+			if (!IsAtlasUrl(result.Url))
+				return;
 			NextUrl();
 			var atlasIndex = GetAtlasIndex(result.Url);
 			foreach (var poster in posters)
@@ -86,7 +90,8 @@ namespace Nappollen.UdonPoster {
 		}
 
 		private void NextUrl() {
-			if (atlasUrls == null || atlasUrls.Length == 0) return;
+			if (atlasUrls == null || atlasUrls.Length == 0)
+				return;
 			var nextIndex = GetAllAtlasIndices();
 			if (nextIndex.Length == 0) {
 				Debug.Log("PosterManager: No atlas indices found to load next URL.");
@@ -106,14 +111,15 @@ namespace Nappollen.UdonPoster {
 		private int[] GetAllAtlasIndices() {
 			if (posters == null || posters.Length == 0) {
 				Debug.LogWarning("PosterManager: No posters found to get atlas indices.");
-				return new int[0];
+				return new int[ 0 ];
 			}
 
-			var scales = new int[0];
+			var scales = new int[ 0 ];
 			foreach (var poster in posters) {
 				var sc = poster.GetScales();
-				if (sc.Length == 0) continue;
-				var newScales = new int[scales.Length + sc.Length];
+				if (sc == null || sc.Length == 0)
+					continue;
+				var newScales = new int[ scales.Length + sc.Length ];
 				Array.Copy(scales, newScales, scales.Length);
 				Array.Copy(sc, 0, newScales, scales.Length, sc.Length);
 				scales = newScales;
@@ -121,14 +127,15 @@ namespace Nappollen.UdonPoster {
 
 			if (scales.Length == 0) {
 				Debug.LogWarning("PosterManager: No scales found in posters.");
-				return new int[0];
+				return new int[ 0 ];
 			}
 
 			// remove duplicates
-			var uniqueScales = new int[0];
+			var uniqueScales = new int[ 0 ];
 			foreach (var scale in scales) {
-				if (Array.IndexOf(uniqueScales, scale) >= 0) continue;
-				var newUnique = new int[uniqueScales.Length + 1];
+				if (Array.IndexOf(uniqueScales, scale) >= 0)
+					continue;
+				var newUnique = new int[ uniqueScales.Length + 1 ];
 				Array.Copy(uniqueScales, newUnique, uniqueScales.Length);
 				newUnique[uniqueScales.Length] = scale;
 				uniqueScales                   = newUnique;
@@ -137,22 +144,23 @@ namespace Nappollen.UdonPoster {
 			// sort scales bubbling
 			for (var i = 0; i < uniqueScales.Length - 1; i++) {
 				for (var j = 0; j < uniqueScales.Length - i - 1; j++) {
-					if (uniqueScales[j] >= uniqueScales[j + 1]) continue;
+					if (uniqueScales[j] >= uniqueScales[j + 1])
+						continue;
 					// ReSharper disable once SwapViaDeconstruction
 					var temp = uniqueScales[j];
-					uniqueScales[j] = uniqueScales[j + 1];
-					uniqueScales[j                   + 1] = temp;
+					uniqueScales[j]     = uniqueScales[j + 1];
+					uniqueScales[j + 1] = temp;
 				}
 			}
 
 			// get indices by scale
-			var indices = new int[0];
+			var indices = new int[ 0 ];
 			foreach (var scale in uniqueScales) {
 				foreach (var poster in posters) {
 					var index = poster.GetAtlasIndex(scale);
 					if (index < 0 || Array.IndexOf(indices, index) >= 0)
 						continue;
-					var newIndices = new int[indices.Length + 1];
+					var newIndices = new int[ indices.Length + 1 ];
 					Array.Copy(indices, newIndices, indices.Length);
 					newIndices[indices.Length] = index;
 					indices                    = newIndices;
@@ -161,14 +169,15 @@ namespace Nappollen.UdonPoster {
 
 			if (indices.Length == 0) {
 				Debug.LogWarning("PosterManager: No atlas indices found in posters.");
-				return new int[0];
+				return new int[ 0 ];
 			}
 
 			// make unique
-			var uniqueIndices = new int[0];
+			var uniqueIndices = new int[ 0 ];
 			foreach (var index in indices) {
-				if (Array.IndexOf(uniqueIndices, index) >= 0) continue;
-				var newUnique = new int[uniqueIndices.Length + 1];
+				if (Array.IndexOf(uniqueIndices, index) >= 0)
+					continue;
+				var newUnique = new int[ uniqueIndices.Length + 1 ];
 				Array.Copy(uniqueIndices, newUnique, uniqueIndices.Length);
 				newUnique[uniqueIndices.Length] = index;
 				uniqueIndices                   = newUnique;
