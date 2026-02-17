@@ -21,12 +21,16 @@ def compress_atlas_data(data):
         'atlases': []
     }
     
+    # Ajouter les métadonnées custom si elles existent
+    if 'metadata' in data and data['metadata']:
+        compressed_data['metadata'] = data['metadata']
+    
     # Créer un mapping des noms d'images vers des index basé sur l'ordre des métadonnées
     image_name_to_index = {}
     image_index = 0
 
     # Utiliser l'ordre des métadonnées pour déterminer les index
-    for image_name, metadata in data['metadata'].items():
+    for image_name, metadata in data['images_metadata'].items():
         image_name_to_index[image_name] = image_index
         compressed_data['mapping'].append(metadata)
         image_index += 1

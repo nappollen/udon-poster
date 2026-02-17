@@ -49,7 +49,7 @@ jobs:
       - name: Check for source images
         id: check_images
         run: |
-          if [ -d "public/images" ] && [ "$(ls -A public/images 2>/dev/null | grep -v '.git' | grep -v 'README' | grep -v 'metadata.json')" ]; then
+          if [ -d "public/images" ] && [ "$(ls -A public/images 2>/dev/null | grep -v '.git' | grep -v 'README' | grep -v 'manifest.json')" ]; then
             echo "images_exist=true" >> $GITHUB_OUTPUT
             echo "✅ Dossier images trouvé avec des fichiers"
           else

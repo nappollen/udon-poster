@@ -229,16 +229,29 @@ class AtlasGenerator:
     def generate_atlases(self) -> Dict[str, Any]:
         """Génère tous les atlas avec différents niveaux de downscale"""
         
-        # Charger le fichier metadata.json s'il existe
-        metadata_file = os.path.join(self.input_folder, "metadata.json")
-        metadata = None
-        if os.path.exists(metadata_file):
+        # Charger le fichier manifest.json s'il existe
+        manifest_file = os.path.join(self.input_folder, "manifest.json")
+        metadata_json = None
+        images_metadata = None
+        custom_metadata = None
+        
+        if os.path.exists(manifest_file):
             try:
-                with open(metadata_file, 'r', encoding='utf-8') as f:
-                    metadata = json.load(f)
-                print(f"Métadonnées chargées depuis: {metadata_file}")
+                with open(manifest_file, 'r', encoding='utf-8') as f:
+                    metadata_json = json.load(f)
+                
+                # Support nouvelle structure
+                if "images" in metadata_json:
+                    images_metadata = metadata_json["images"]
+                    custom_metadata = metadata_json.get("metadata", {})
+                else:
+                    # Ancienne structure (fallback)
+                    images_metadata = metadata_json
+                    custom_metadata = {}
+                
+                print(f"Métadonnées chargées depuis: {manifest_file}")
             except Exception as e:
-                print(f"Erreur lors du chargement de {metadata_file}: {e}")
+                print(f"Erreur lors du chargement de {manifest_file}: {e}")
         
         # Charger toutes les images
         image_files = []
@@ -268,9 +281,13 @@ class AtlasGenerator:
             'max_atlas_size': self.max_atlas_size
         }
         
-        # Ajouter les métadonnées si elles existent
-        if metadata is not None:
-            atlas_data['metadata'] = metadata
+        # Ajouter les métadonnées des images si elles existent
+        if images_metadata is not None:
+            atlas_data['images_metadata'] = images_metadata
+        
+        # Ajouter les métadonnées custom si elles existent
+        if custom_metadata is not None and custom_metadata:
+            atlas_data['metadata'] = custom_metadata
         
         # Générer des atlas pour différents niveaux de downscale
         scale_factors = [1, 2, 4, 8, 16]  # Niveaux de downscale
