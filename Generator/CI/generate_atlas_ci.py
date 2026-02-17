@@ -73,7 +73,7 @@ def generate_static_ci(atlas_folder: str, output_static_folder: str):
         print(f"❌ Erreur: Le dossier '{atlas_folder}' n'existe pas!")
         sys.exit(1)
     
-    json_file = Path(atlas_folder) / 'atlas_data.json'
+    json_file = Path(atlas_folder) / 'manifest.json'
     if not json_file.exists():
         print(f"❌ Erreur: Le fichier {json_file} n'existe pas")
         print("Les atlas n'ont probablement pas été générés correctement")

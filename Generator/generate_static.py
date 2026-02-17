@@ -114,10 +114,10 @@ def generate_static_version(input_path=None, output_path=None):
         print(f"Erreur: Le dossier d'entrée {atlas_folder} n'existe pas")
         return None
     
-    json_file = atlas_folder / 'atlas_data.json'
+    json_file = atlas_folder / 'manifest.json'
     if not json_file.exists():
         print(f"Erreur: Le fichier {json_file} n'existe pas")
-        print("Assurez-vous que le dossier contient le fichier atlas_data.json")
+        print("Assurez-vous que le dossier contient le fichier manifest.json")
         return None
     
     # Déterminer le dossier de sortie
