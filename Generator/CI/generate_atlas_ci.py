@@ -24,7 +24,13 @@ def progress_callback(step, total, message):
     """Callback pour afficher la progression dans GitHub Actions"""
     percentage = int((step / total) * 100) if total > 0 else 0
     progress_bar = '█' * (percentage // 5) + '░' * (20 - percentage // 5)
+    
+    # Afficher la barre de progression normale
     print(f"[{progress_bar}] {percentage}% - {message}", flush=True)
+    
+    # Afficher aussi comme notice GitHub Actions pour plus de visibilité
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        print(f"::notice title=Progress {percentage}%::{message}", flush=True)
 
 
 def generate_atlases_ci(input_folder: str, output_folder: str):
