@@ -62,6 +62,8 @@ def generate_static_ci(atlas_folder: str, output_static_folder: str):
     sys.path.insert(0, str(Path(__file__).parent.parent))
     
     from generate_static import generate_static_version
+    import json
+    from datetime import datetime, timezone
     
     print(f"📂 Dossier d'atlas: {atlas_folder}")
     print(f"📂 Dossier de sortie: {output_static_folder}")
@@ -76,6 +78,57 @@ def generate_static_ci(atlas_folder: str, output_static_folder: str):
         print(f"❌ Erreur: Le fichier {json_file} n'existe pas")
         print("Les atlas n'ont probablement pas été générés correctement")
         sys.exit(1)
+    
+    # Charger les données atlas et ajouter les métadonnées CI/CD
+    with open(json_file, 'r', encoding='utf-8') as f:
+        atlas_data = json.load(f)
+    
+    # Récupérer les informations GitHub Actions depuis les variables d'environnement
+    github_sha = os.environ.get('GITHUB_SHA', '')
+    github_repo = os.environ.get('GITHUB_REPOSITORY', '')
+    github_server = os.environ.get('GITHUB_SERVER_URL', 'https://github.com')
+    github_run_id = os.environ.get('GITHUB_RUN_ID', '')
+    github_run_number = os.environ.get('GITHUB_RUN_NUMBER', '')
+    github_workflow = os.environ.get('GITHUB_WORKFLOW', '')
+    github_ref = os.environ.get('GITHUB_REF', '')
+    github_actor = os.environ.get('GITHUB_ACTOR', '')
+    
+    # Créer les métadonnées CI/CD
+    ci_metadata = {
+        'generated_at': datetime.now(timezone.utc).isoformat(),
+        'commit': {
+            'sha': github_sha,
+            'short_sha': github_sha[:7] if github_sha else '',
+            'url': f"{github_server}/{github_repo}/commit/{github_sha}" if github_sha and github_repo else ''
+        },
+        'repository': {
+            'name': github_repo,
+            'url': f"{github_server}/{github_repo}" if github_repo else ''
+        },
+        'workflow': {
+            'name': github_workflow,
+            'run_number': github_run_number,
+            'run_id': github_run_id,
+            'run_url': f"{github_server}/{github_repo}/actions/runs/{github_run_id}" if github_run_id and github_repo else ''
+        },
+        'ref': github_ref,
+        'actor': github_actor
+    }
+    
+    # Ajouter ou fusionner avec les métadonnées existantes
+    if 'metadata' not in atlas_data:
+        atlas_data['metadata'] = {}
+    
+    atlas_data['metadata']['ci'] = ci_metadata
+    
+    print(f"✅ Métadonnées CI/CD ajoutées:")
+    print(f"   - Commit: {ci_metadata['commit']['short_sha']}")
+    print(f"   - Workflow: {github_workflow} #{github_run_number}")
+    print(f"   - Repository: {github_repo}")
+    
+    # Sauvegarder les données modifiées
+    with open(json_file, 'w', encoding='utf-8') as f:
+        json.dump(atlas_data, f, indent=2, ensure_ascii=False)
     
     # Générer la version statique en utilisant la fonction refactorisée
     result = generate_static_version(atlas_folder, output_static_folder)
