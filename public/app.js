@@ -50,6 +50,12 @@ class AtlasViewer {
         // Display atlas endpoints
         this.displayAtlasEndpoints();
         
+        // Update GitHub link if metadata available
+        this.updateGithubLink();
+        
+        // Update base path if available
+        this.updateBasePath();
+        
         // Display image gallery
         this.displayGallery();
     }
@@ -82,29 +88,97 @@ class AtlasViewer {
         // Group atlases by scale
         const byScale = this.groupAtlasesByScale();
         
-        let html = '<h3>Atlas Files</h3>';
+        let html = '<div class="atlas-list">';
         
         // Sort scales numerically
         const sortedScales = Object.keys(byScale).sort((a, b) => parseInt(a) - parseInt(b));
         
         sortedScales.forEach(scale => {
             const atlases = byScale[scale];
-            html += `<div class="scale-group">
-                <strong>Scale ${scale}x (${atlases.length} atlas${atlases.length > 1 ? 'es' : ''})</strong>`;
-            
             atlases.forEach((atlas, idx) => {
-                const filename = `atlas/${idx}.png`;
-                const fullUrl = this.getResourceUrl(filename);
-                html += `<div class="api-endpoint">
-                    <code>${filename}</code>
-                    <a href="${fullUrl}" target="_blank">View</a>
-                </div>`;
+                const filename = `atlas/${scale}x/${idx}.png`;
+                const fullUrl = this.getResourceUrl(`atlas/${idx}.png`);
+                html += `<a href="${fullUrl}" target="_blank" class="atlas-item" title="${filename}">
+                    <span class="atlas-scale">${scale}x</span>
+                    <span class="atlas-name">#${idx}</span>
+                </a>`;
             });
-            
-            html += '</div>';
         });
         
+        html += '</div>';
+        
         container.innerHTML = html;
+    }
+
+    /**
+     * Update GitHub link in navbar
+     */
+    updateGithubLink() {
+        const metadata = this.data.metadata;
+        if (!metadata || !metadata.ci) {
+            return;
+        }
+        
+        // Update commit link
+        if (metadata.ci.commit) {
+            const githubLink = document.getElementById('githubLink');
+            const commitId = document.getElementById('commitId');
+            
+            if (githubLink && commitId) {
+                const commit = metadata.ci.commit;
+                githubLink.href = commit.url;
+                commitId.textContent = commit.short_sha;
+                githubLink.style.display = 'flex';
+            }
+        }
+        
+        // Update repository link
+        if (metadata.ci.repository) {
+            const repoLink = document.getElementById('repoLink');
+            if (repoLink) {
+                repoLink.href = metadata.ci.repository.url;
+                repoLink.target = '_blank';
+            }
+        }
+    }
+
+    /**
+     * Update base path copy button
+     */
+    updateBasePath() {
+        const metadata = this.data.metadata;
+        if (!metadata || !metadata.base_url) {
+            return;
+        }
+        
+        const section = document.getElementById('basePathSection');
+        const button = document.getElementById('copyBasePath');
+        const text = document.getElementById('basePathText');
+        
+        if (!section || !button || !text) return;
+        
+        text.textContent = metadata.base_url;
+        section.style.display = 'block';
+        
+        button.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(metadata.base_url);
+                const originalText = text.textContent;
+                text.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    text.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                text.textContent = 'Failed to copy';
+                setTimeout(() => {
+                    text.textContent = metadata.base_url;
+                }, 2000);
+            }
+        };
     }
 
     /**
