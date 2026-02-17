@@ -237,6 +237,56 @@ class AtlasViewer {
     }
 
     /**
+     * Crop image from atlas using canvas
+     */
+    async cropImageFromAtlas(atlasIndex, imageIndex) {
+        const atlas = this.data.atlases[atlasIndex];
+        const uvData = atlas.uv[imageIndex];
+        
+        if (!uvData) {
+            return this.getPlaceholderImage();
+        }
+        
+        try {
+            // Load the atlas image
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            const atlasUrl = this.getAtlasUrl(atlasIndex);
+            
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = atlasUrl;
+            });
+            
+            // Create canvas with the size of the cropped image
+            const canvas = document.createElement('canvas');
+            canvas.width = uvData.width;
+            canvas.height = uvData.height;
+            const ctx = canvas.getContext('2d');
+            
+            // Calculate pixel coordinates from UV coordinates
+            const sourceX = uvData.rect_x * atlas.width;
+            const sourceY = uvData.rect_y * atlas.height;
+            const sourceWidth = uvData.rect_width * atlas.width;
+            const sourceHeight = uvData.rect_height * atlas.height;
+            
+            // Draw the cropped portion
+            ctx.drawImage(
+                img,
+                sourceX, sourceY, sourceWidth, sourceHeight,
+                0, 0, uvData.width, uvData.height
+            );
+            
+            // Convert to base64
+            return canvas.toDataURL('image/png');
+        } catch (error) {
+            console.error('Error cropping image:', error);
+            return this.getPlaceholderImage();
+        }
+    }
+
+    /**
      * Create an image card element
      */
     createImageCard(metadata, index) {
@@ -245,17 +295,16 @@ class AtlasViewer {
         
         // Find the atlas containing this image
         const atlasIndex = this.findAtlasForImage(index);
-        const imageSrc = atlasIndex !== -1 ? this.getAtlasUrl(atlasIndex) : this.getPlaceholderImage();
         
         const title = metadata.title || `Image ${index + 1}`;
         const url = metadata.url || '';
         
+        // Create placeholder first
         card.innerHTML = `
             <div class="image-wrapper">
-                <img src="${imageSrc}" 
+                <img src="${this.getPlaceholderImage()}" 
                      alt="${this.escapeHtml(title)}" 
-                     loading="lazy" 
-                     onerror="this.src='${this.getPlaceholderImage()}'">
+                     loading="lazy">
                 <div class="image-overlay">
                     <div class="image-title">${this.escapeHtml(title)}</div>
                     ${url ? `<div class="image-url">${this.escapeHtml(url)}</div>` : ''}
@@ -263,12 +312,23 @@ class AtlasViewer {
             </div>
         `;
         
-        // Make card clickable to show image
-        card.style.cursor = 'pointer';
-        card.onclick = (e) => {
-            e.preventDefault();
-            this.showLightbox(imageSrc, title, url);
-        };
+        // Crop and load the actual image asynchronously
+        if (atlasIndex !== -1) {
+            const atlasUrl = this.getAtlasUrl(atlasIndex);
+            this.cropImageFromAtlas(atlasIndex, index).then(croppedSrc => {
+                const img = card.querySelector('img');
+                if (img) {
+                    img.src = croppedSrc;
+                }
+                
+                // Make card clickable to show image (use cropped base64 with atlas URL link)
+                card.style.cursor = 'pointer';
+                card.onclick = (e) => {
+                    e.preventDefault();
+                    this.showLightbox(croppedSrc, title, url, atlasUrl);
+                };
+            });
+        }
         
         return card;
     }
@@ -276,7 +336,7 @@ class AtlasViewer {
     /**
      * Show image in lightbox
      */
-    showLightbox(imageSrc, title, url) {
+    showLightbox(imageSrc, title, url, atlasUrl = null) {
         const lightbox = document.createElement('div');
         lightbox.className = 'lightbox';
         lightbox.innerHTML = `
@@ -291,7 +351,7 @@ class AtlasViewer {
                 <div class="lightbox-info">
                     <div class="lightbox-title">${this.escapeHtml(title)}</div>
                     ${url ? `<a href="${url}" target="_blank" class="lightbox-link">${this.escapeHtml(url)}</a>` : ''}
-                    <a href="${imageSrc}" target="_blank" class="lightbox-link" style="margin-top: 0.5rem; display: block; opacity: 0.7;">${this.escapeHtml(imageSrc)}</a>
+                    ${atlasUrl ? `<a href="${atlasUrl}" target="_blank" class="lightbox-link" style="margin-top: 0.5rem; display: block; opacity: 0.7;">Atlas: ${this.escapeHtml(atlasUrl)}</a>` : `<a href="${imageSrc}" target="_blank" class="lightbox-link" style="margin-top: 0.5rem; display: block; opacity: 0.7;">${this.escapeHtml(imageSrc)}</a>`}
                 </div>
             </div>
         `;
