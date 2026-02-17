@@ -93,6 +93,14 @@ def generate_static_ci(atlas_folder: str, output_static_folder: str):
     github_ref = os.environ.get('GITHUB_REF', '')
     github_actor = os.environ.get('GITHUB_ACTOR', '')
     
+    # Construire l'URL GitHub Pages
+    github_pages_url = ''
+    if github_repo:
+        # Format: https://<username>.github.io/<repo>/
+        parts = github_repo.split('/')
+        if len(parts) == 2:
+            github_pages_url = f"https://{parts[0]}.github.io/{parts[1]}/"
+    
     # Créer les métadonnées CI/CD
     ci_metadata = {
         'generated_at': datetime.now(timezone.utc).isoformat(),
@@ -119,9 +127,11 @@ def generate_static_ci(atlas_folder: str, output_static_folder: str):
     if 'metadata' not in atlas_data:
         atlas_data['metadata'] = {}
     
+    atlas_data['metadata']['base_url'] = github_pages_url
     atlas_data['metadata']['ci'] = ci_metadata
     
     print(f"✅ Métadonnées CI/CD ajoutées:")
+    print(f"   - Base URL: {github_pages_url}")
     print(f"   - Commit: {ci_metadata['commit']['short_sha']}")
     print(f"   - Workflow: {github_workflow} #{github_run_number}")
     print(f"   - Repository: {github_repo}")
