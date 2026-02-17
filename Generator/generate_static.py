@@ -83,12 +83,18 @@ def copy_and_rename_images(atlas_folder, output_static_folder, atlas_data):
     return copied_files
 
 
-def generate_static_version():
+def generate_static_version(input_path=None, output_path=None):
     """
     Fonction principale pour générer la version statique
+    
+    Args:
+        input_path: Dossier des atlas d'entrée (par défaut: 'output_atlases')
+        output_path: Dossier de sortie (par défaut: 'output_static')
+        
+    Returns:
+        dict: Résultat de la génération ou None en cas d'erreur
     """
-    # Demander le dossier d'entrée
-    input_path = input("Dossier des atlas d'entrée (par défaut: 'output_atlases'):  ").strip()
+    # Déterminer le dossier d'entrée
     if not input_path:
         # Utiliser le dossier par défaut
         script_dir = Path(__file__).parent
@@ -100,16 +106,15 @@ def generate_static_version():
     # Vérifier que le dossier d'entrée existe
     if not atlas_folder.exists():
         print(f"Erreur: Le dossier d'entrée {atlas_folder} n'existe pas")
-        return
+        return None
     
     json_file = atlas_folder / 'atlas_data.json'
     if not json_file.exists():
         print(f"Erreur: Le fichier {json_file} n'existe pas")
         print("Assurez-vous que le dossier contient le fichier atlas_data.json")
-        return
+        return None
     
-    # Demander le dossier de sortie
-    output_path = input("Dossier de sortie (par défaut: 'output_static'): ").strip()
+    # Déterminer le dossier de sortie
     if not output_path:
         # Utiliser le dossier par défaut
         output_static_folder = Path('output_static')
@@ -126,7 +131,7 @@ def generate_static_version():
         print(f"Données JSON chargées depuis: {json_file}")
     except Exception as e:
         print(f"Erreur lors du chargement du JSON: {e}")
-        return
+        return None
     
     # Compresser les données (comme fait l'API PHP)
     compressed_data = compress_atlas_data(atlas_data)
@@ -139,7 +144,7 @@ def generate_static_version():
         print(f"JSON compressé sauvegardé: {atlas_json_file}")
     except Exception as e:
         print(f"Erreur lors de la sauvegarde du JSON: {e}")
-        return
+        return None
     
     # Copier et renommer les images
     copied_files = copy_and_rename_images(atlas_folder, output_static_folder, atlas_data)
@@ -152,7 +157,23 @@ def generate_static_version():
     print(f"   - {len(copied_files)} images copiées")
     print(f"   - {len(compressed_data['atlases'])} atlas")
     print(f"   - {len(compressed_data['mapping'])} images dans le mapping")
+    
+    return {
+        'output_folder': str(output_static_folder),
+        'atlas_json': str(atlas_json_file),
+        'copied_files': copied_files,
+        'compressed_data': compressed_data
+    }
 
 
 if __name__ == '__main__':
-    generate_static_version()
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Génère une version statique des atlas pour GitHub Pages')
+    parser.add_argument('--input', default=None,
+                       help='Dossier des atlas d\'entrée (par défaut: output_atlases)')
+    parser.add_argument('--output', default=None,
+                       help='Dossier de sortie (par défaut: output_static)')
+    
+    args = parser.parse_args()
+    generate_static_version(args.input, args.output)
