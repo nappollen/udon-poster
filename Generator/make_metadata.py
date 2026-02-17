@@ -2,13 +2,14 @@ import os
 import json
 from PIL import Image
 
-def generate_metadata(input_folder='input_images', progress_callback=None):
+def generate_metadata(input_folder='input_images', progress_callback=None, auto_delete_missing=False):
     """
     Generates or updates the manifest.json file for images
     
     Args:
         input_folder: Folder containing images
         progress_callback: Progress callback function (step, total, message)
+        auto_delete_missing: Automatically delete entries for missing files
         
     Returns:
         dict: Generated metadata or None on error
@@ -72,11 +73,18 @@ def generate_metadata(input_folder='input_images', progress_callback=None):
     # Vérifier les images dans le manifest qui n'existent plus
     for filename in list(images_metadata.keys()):
         if filename not in existing_images:
-            # Fichier manquant, ajouter un commentaire d'erreur
-            if "_comment" not in images_metadata[filename] or images_metadata[filename]["_comment"] != "ERROR: Image file not found":
-                images_metadata[filename]["_comment"] = "ERROR: Image file not found"
+            # Fichier manquant
+            if auto_delete_missing:
+                # Supprimer l'entrée du manifest
+                del images_metadata[filename]
                 missing_files += 1
-                print(f"⚠️ Fichier manquant: {filename}")
+                print(f"🗑️ Entrée supprimée: {filename}")
+            else:
+                # Ajouter un commentaire d'erreur
+                if "_comment" not in images_metadata[filename] or images_metadata[filename]["_comment"] != "ERROR: Image file not found":
+                    images_metadata[filename]["_comment"] = "ERROR: Image file not found"
+                    missing_files += 1
+                    print(f"⚠️ Fichier manquant: {filename}")
         else:
             # Fichier existe, supprimer le commentaire d'erreur s'il y en a un
             if "_comment" in images_metadata[filename] and images_metadata[filename]["_comment"] == "ERROR: Image file not found":
@@ -125,7 +133,10 @@ def generate_metadata(input_folder='input_images', progress_callback=None):
         print(f"  Total images: {total_images}")
         print(f"  New entries created: {new_entries}")
         if missing_files > 0:
-            print(f"  ⚠️ Missing files: {missing_files}")
+            if auto_delete_missing:
+                print(f"  🗑️ Deleted entries: {missing_files}")
+            else:
+                print(f"  ⚠️ Missing files: {missing_files}")
         
         return metadata_json
         
@@ -141,9 +152,11 @@ def main():
     parser = argparse.ArgumentParser(description='Generates or updates manifest.json file for images')
     parser.add_argument('--input', default='input_images',
                        help='Input images folder (default: input_images)')
+    parser.add_argument('--auto-delete-missing', action='store_true',
+                       help='Automatically delete entries for missing files from manifest')
     
     args = parser.parse_args()
-    generate_metadata(args.input)
+    generate_metadata(args.input, auto_delete_missing=args.auto_delete_missing)
 
 if __name__ == "__main__":
     main()
