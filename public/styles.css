@@ -263,6 +263,7 @@ body {
 .atlas-item {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.25rem;
     padding: 0.35rem 0.5rem;
     background-color: hsl(var(--muted));
@@ -272,11 +273,12 @@ body {
     font-size: 0.75rem;
     transition: all 0.2s ease;
     color: hsl(var(--foreground));
+    flex: 1 1 auto;
 }
 
 .atlas-item:hover {
-    background-color: hsl(var(--accent));
-    border-color: hsl(var(--foreground));
+    filter: brightness(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .atlas-scale {
@@ -368,7 +370,9 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.95);
+    background-color: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -376,6 +380,36 @@ body {
     cursor: zoom-out;
     padding: 2rem;
     animation: fadeIn 0.2s ease;
+}
+
+.lightbox-close {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10000;
+    transition: all 0.2s ease;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.lightbox-close:hover {
+    background-color: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-close svg {
+    width: 20px;
+    height: 20px;
 }
 
 @keyframes fadeIn {

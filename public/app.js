@@ -88,26 +88,48 @@ class AtlasViewer {
         // Group atlases by scale
         const byScale = this.groupAtlasesByScale();
         
-        let html = '<div class="atlas-list">';
+        const atlasListDiv = document.createElement('div');
+        atlasListDiv.className = 'atlas-list';
         
         // Sort scales numerically
         const sortedScales = Object.keys(byScale).sort((a, b) => parseInt(a) - parseInt(b));
         
-        sortedScales.forEach(scale => {
+        let globalIdx = 0;
+        sortedScales.forEach((scale, scaleIdx) => {
             const atlases = byScale[scale];
+            // Calculer une couleur basée sur le nombre total de scales
+            const hue = (scaleIdx * 360 / sortedScales.length) % 360;
+            const bgColor = `hsla(${hue}, 15%, 25%, 1)`;
+            const borderColor = `hsla(${hue}, 25%, 40%, 1)`;
+            
             atlases.forEach((atlas, idx) => {
                 const filename = `atlas/${scale}x/${idx}.png`;
-                const fullUrl = this.getResourceUrl(`atlas/${idx}.png`);
-                html += `<a href="${fullUrl}" target="_blank" class="atlas-item" title="${filename}">
+                const fullUrl = this.getAtlasUrl(globalIdx);
+                
+                const atlasItem = document.createElement('a');
+                atlasItem.href = '#';
+                atlasItem.className = 'atlas-item';
+                atlasItem.title = filename;
+                atlasItem.style.backgroundColor = bgColor;
+                atlasItem.style.borderColor = borderColor;
+                atlasItem.style.color = 'white';
+                atlasItem.innerHTML = `
                     <span class="atlas-scale">${scale}x</span>
-                    <span class="atlas-name">#${idx}</span>
-                </a>`;
+                    <span class="atlas-name">#${globalIdx}</span>
+                `;
+                
+                atlasItem.onclick = (e) => {
+                    e.preventDefault();
+                    this.showLightbox(fullUrl, `Atlas ${scale}x #${globalIdx}`, '');
+                };
+                
+                atlasListDiv.appendChild(atlasItem);
+                globalIdx++;
             });
         });
         
-        html += '</div>';
-        
-        container.innerHTML = html;
+        container.innerHTML = '';
+        container.appendChild(atlasListDiv);
     }
 
     /**
@@ -223,7 +245,7 @@ class AtlasViewer {
         
         // Find the atlas containing this image
         const atlasIndex = this.findAtlasForImage(index);
-        const imageSrc = atlasIndex !== -1 ? this.getResourceUrl(`atlas/${atlasIndex}.png`) : this.getPlaceholderImage();
+        const imageSrc = atlasIndex !== -1 ? this.getAtlasUrl(atlasIndex) : this.getPlaceholderImage();
         
         const title = metadata.title || `Image ${index + 1}`;
         const url = metadata.url || '';
@@ -258,11 +280,18 @@ class AtlasViewer {
         const lightbox = document.createElement('div');
         lightbox.className = 'lightbox';
         lightbox.innerHTML = `
+            <button class="lightbox-close" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
             <div class="lightbox-content">
                 <img src="${imageSrc}" alt="${this.escapeHtml(title)}">
                 <div class="lightbox-info">
                     <div class="lightbox-title">${this.escapeHtml(title)}</div>
                     ${url ? `<a href="${url}" target="_blank" class="lightbox-link">${this.escapeHtml(url)}</a>` : ''}
+                    <a href="${imageSrc}" target="_blank" class="lightbox-link" style="margin-top: 0.5rem; display: block; opacity: 0.7;">${this.escapeHtml(imageSrc)}</a>
                 </div>
             </div>
         `;
@@ -294,6 +323,17 @@ class AtlasViewer {
             }
         }
         return -1;
+    }
+
+    /**
+     * Get atlas URL (either from data or construct it)
+     */
+    getAtlasUrl(atlasIndex) {
+        // Check if atlas has a url field
+        if (this.data.atlases[atlasIndex] && this.data.atlases[atlasIndex].url) 
+            return this.data.atlases[atlasIndex].url;
+        // Otherwise construct it
+        return this.getResourceUrl(`atlas/${atlasIndex}.png`);
     }
 
     /**
