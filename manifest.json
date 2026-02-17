@@ -43,6 +43,9 @@
     }
   },
   "metadata": {
-    "hello": "world"
+    "hello": "world",
+    "max_atlas_size": 2048,
+    "padding": 0,
+    "max_image_size": 1024
   }
 }
