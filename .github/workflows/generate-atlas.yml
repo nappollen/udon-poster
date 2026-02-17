@@ -22,6 +22,9 @@ jobs:
   generate-atlas:
     name: Generate Atlas
     runs-on: ubuntu-latest
+    outputs:
+      num_atlases: ${{ steps.generate.outputs.num_atlases }}
+      num_images: ${{ steps.generate.outputs.num_images }}
     
     steps:
       - name: Checkout main branch (code)
@@ -59,6 +62,7 @@ jobs:
           fi
       
       - name: Generate atlases from source images
+        id: generate
         if: steps.check_images.outputs.images_exist == 'true'
         run: |
           cd main/Generator
@@ -89,12 +93,14 @@ jobs:
         with:
           name: atlas-static
           path: main/Generator/output_static
-          retention-days: 90
+          retention-days: 1  # Temporaire, seulement pour passer entre jobs
 
   create-archive:
     name: Create Atlas Archive
     needs: generate-atlas
     runs-on: ubuntu-latest
+    outputs:
+      zip_size: ${{ steps.create_zip.outputs.zip_size }}
     
     steps:
       - name: Download static output
@@ -104,29 +110,19 @@ jobs:
           path: atlas-static
       
       - name: Create ZIP archive
+        id: create_zip
         run: |
           cd atlas-static
           zip -r ../atlas.zip .
           cd ..
           FILE_SIZE=$(du -h atlas.zip | cut -f1)
           echo "📦 Archive créée: $FILE_SIZE"
-          
-          # Ajouter au résumé GitHub Actions
-          echo "## 📦 Archive ZIP créée" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📊 Informations" >> $GITHUB_STEP_SUMMARY
-          echo "- **Taille**: $FILE_SIZE" >> $GITHUB_STEP_SUMMARY
-          echo "- **Nom**: \`atlas.zip\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📥 Téléchargement" >> $GITHUB_STEP_SUMMARY
-          echo "L'archive sera disponible dans les **Artifacts** de ce workflow pendant 90 jours." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> ✅ Contient tous les fichiers statiques des posters" >> $GITHUB_STEP_SUMMARY
+          echo "zip_size=$FILE_SIZE" >> $GITHUB_OUTPUT
       
       - name: Upload ZIP artifact
         uses: actions/upload-artifact@v4
         with:
-          name: atlas-zip
+          name: atlas
           path: atlas.zip
           retention-days: 90
 
@@ -137,6 +133,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
       - name: Download static output
@@ -159,37 +157,47 @@ jobs:
       
       - name: Display deployment info
         run: |
-          PAGE_URL="${{ steps.deployment.outputs.page_url }}"
-          
           echo "🎉 Déploiement réussi!"
-          echo "📍 URL: $PAGE_URL"
-          echo "📄 Atlas JSON: ${PAGE_URL}atlas.json"
-          echo ""
-          echo "Utilisez cette URL dans votre monde VRChat!"
+          echo "📍 URL: ${{ steps.deployment.outputs.page_url }}"
+
+  summary:
+    name: Generate Summary
+    needs: [generate-atlas, create-archive, deploy-pages]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Create consolidated summary
+        run: |
+          PAGE_URL="${{ needs.deploy-pages.outputs.page_url }}"
           
-          # Ajouter au résumé GitHub Actions avec mise en forme riche
+          # Résumé consolidé unique
           cat >> $GITHUB_STEP_SUMMARY << EOF
-          ## 🚀 Déploiement sur GitHub Pages réussi!
+          # 🎨 Atlas de Posters - Génération et Déploiement
           
-          ### 🌐 URLs disponibles
+          ## 📊 Statistiques
+          
+          - **Images traitées**: ${{ needs.generate-atlas.outputs.num_images }}
+          - **Atlas générés**: ${{ needs.generate-atlas.outputs.num_atlases }}
+          - **Niveaux de downscale**: 1×, 2×, 4×, 8×, 16×
+          - **Taille de l'archive**: ${{ needs.create-archive.outputs.zip_size }}
+          
+          ## 🌐 Déploiement
           
           | Type | URL |
           |------|-----|
-          | **Site web** | [$PAGE_URL]($PAGE_URL) |
-          | **API Atlas** | [${PAGE_URL}atlas.json](${PAGE_URL}atlas.json) |
+          | **🌍 Site web** | [$PAGE_URL]($PAGE_URL) |
+          | **📄 API Atlas** | [${PAGE_URL}atlas.json](${PAGE_URL}atlas.json) |
+          | **📦 Archive ZIP** | [Télécharger](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
           
-          ### 🎮 Utilisation dans VRChat
+          ## 🎮 Utilisation dans VRChat
           
           \`\`\`
           Base URL: $PAGE_URL
           Atlas API: ${PAGE_URL}atlas.json
           \`\`\`
           
-          ### 📥 Téléchargements
-          
-          L'archive ZIP des posters est disponible dans les [**Artifacts**](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) de ce workflow.
-          
           ---
           
-          > ✅ **Le site est maintenant en ligne et accessible publiquement!**
+          ✅ **Tous les fichiers sont générés et déployés avec succès!**
           EOF

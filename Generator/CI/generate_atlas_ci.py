@@ -96,23 +96,10 @@ def generate_atlases_ci(input_folder: str, output_folder: str):
         print("❌ Échec de la génération des atlas")
         sys.exit(1)
     
-    # Créer le résumé pour GitHub Actions
+    # Exporter les statistiques pour le résumé final
     num_atlases = len(atlas_data.get('atlases', []))
     num_images = atlas_data.get('total_images', 0)
     
-    summary = f"""## 🎨 Génération des atlas terminée
-    
-### 📊 Statistiques
-- **Images traitées**: {num_images}
-- **Atlas générés**: {num_atlases}
-- **Niveaux de downscale**: 1×, 2×, 4×, 8×, 16×
-
-### 📁 Fichiers générés
-- `manifest.json` - Métadonnées des atlas
-- Fichiers d'atlas aux différentes résolutions
-"""
-    
-    github_summary(summary)
     github_output('num_atlases', str(num_atlases))
     github_output('num_images', str(num_images))
     
@@ -222,29 +209,9 @@ def generate_static_ci(atlas_folder: str, output_static_folder: str):
         print("❌ Échec de la génération de la version statique")
         sys.exit(1)
     
-    # Créer le résumé pour GitHub Actions
-    num_atlases = len(result['compressed_data'].get('atlases', []))
-    num_images = len(result['compressed_data'].get('mapping', []))
-    
-    summary = f"""## 📦 Version statique générée
-    
-### 📊 Contenu
-- **Images**: {num_images}
-- **Atlas**: {num_atlases}
-
-### 🔗 Fichiers générés
-- [`atlas.json`]({github_pages_url}atlas.json) - API JSON des atlas
-- `atlas/` - Images d'atlas (indexées par numéro)
-
-### 🌐 URLs d'accès
-- **Base URL**: [{github_pages_url}]({github_pages_url})
-- **API Atlas**: [{github_pages_url}atlas.json]({github_pages_url}atlas.json)
-
-> ✅ Prêt pour le déploiement sur GitHub Pages!
-"""
-    
-    github_summary(summary)
+    # Exporter l'URL pour le résumé final
     github_output('atlas_url', f"{github_pages_url}atlas.json")
+    github_output('github_pages_url', github_pages_url)
     
     return result
 
