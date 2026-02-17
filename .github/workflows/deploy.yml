@@ -1,0 +1,20 @@
+name: Generate Atlas
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  make-atlas:
+    uses: nappollen/udon-poster/.github/workflows/generate-atlas.yml@v1
+    with:
+      input-path: "images"
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
