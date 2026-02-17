@@ -4,365 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlas Viewer - GitHub Pages</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding: 40px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-        
-        h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        
-        .subtitle {
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-        
-        .stat-card {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-        }
-        
-        .stat-value {
-            font-size: 3em;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        
-        .stat-label {
-            font-size: 1.1em;
-            opacity: 0.9;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .api-section {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-        
-        .api-section h2 {
-            margin-bottom: 20px;
-            font-size: 2em;
-        }
-        
-        .api-endpoint {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .api-endpoint code {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            font-size: 1.1em;
-            flex-grow: 1;
-            margin-right: 10px;
-        }
-        
-        .api-endpoint a {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 6px;
-            text-decoration: none;
-            transition: background 0.3s ease;
-        }
-        
-        .api-endpoint a:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-        
-        .image-card {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .image-card:hover {
-            transform: scale(1.05);
-        }
-        
-        .image-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-        
-        .image-info {
-            padding: 15px;
-        }
-        
-        .image-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .image-url {
-            font-size: 0.85em;
-            opacity: 0.8;
-            word-break: break-all;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 60px;
-            font-size: 1.5em;
-        }
-        
-        .error {
-            background: rgba(255, 0, 0, 0.2);
-            border: 2px solid rgba(255, 0, 0, 0.5);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            margin: 20px 0;
-        }
-        
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 4px solid white;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2em;
-            }
-            
-            .stats {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🖼️ Atlas Viewer</h1>
-            <p class="subtitle">Dynamic Image Atlas Gallery</p>
-        </header>
-        
-        <div class="stats" id="stats">
-            <div class="stat-card">
-                <div class="stat-value" id="totalImages">-</div>
-                <div class="stat-label">Images</div>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">
+                <h1>Atlas Viewer</h1>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="totalAtlases">-</div>
-                <div class="stat-label">Atlas</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="scaleFactors">-</div>
-                <div class="stat-label">Scale Levels</div>
+            <div class="navbar-stats" id="navStats">
+                <div class="nav-stat">
+                    <span class="nav-stat-value" id="navTotalImages">-</span>
+                    <span class="nav-stat-label">images</span>
+                </div>
+                <div class="nav-stat">
+                    <span class="nav-stat-value" id="navTotalAtlases">-</span>
+                    <span class="nav-stat-label">atlas</span>
+                </div>
+                <div class="nav-stat">
+                    <span class="nav-stat-value" id="navScaleFactors">-</span>
+                    <span class="nav-stat-label">scales</span>
+                </div>
             </div>
         </div>
-        
-        <div class="api-section">
-            <h2>📡 API Endpoints</h2>
-            <div class="api-endpoint">
-                <code id="atlasUrl">atlas.json</code>
-                <a href="atlas.json" target="_blank">View JSON</a>
-            </div>
-            <div id="atlasEndpoints"></div>
-        </div>
-        
-        <div class="api-section">
-            <h2>🖼️ Image Gallery</h2>
-            <div id="loading" class="loading">
-                <div class="spinner"></div>
-                <p>Loading atlas data...</p>
-            </div>
-            <div id="error" class="error" style="display: none;"></div>
-            <div id="gallery" class="gallery"></div>
-        </div>
-    </div>
+    </nav>
     
-    <script>
-        async function loadAtlasData() {
-            try {
-                const response = await fetch('atlas.json');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                displayAtlasData(data);
-            } catch (error) {
-                console.error('Error loading atlas data:', error);
-                document.getElementById('loading').style.display = 'none';
-                const errorDiv = document.getElementById('error');
-                errorDiv.style.display = 'block';
-                errorDiv.innerHTML = `
-                    <h3>❌ Error Loading Atlas Data</h3>
-                    <p>${error.message}</p>
-                    <p>Make sure atlas.json exists and is accessible.</p>
-                `;
-            }
-        }
-        
-        function displayAtlasData(data) {
-            // Hide loading
-            document.getElementById('loading').style.display = 'none';
-            
-            // Update stats
-            const totalImages = data.mapping ? data.mapping.length : 0;
-            const totalAtlases = data.atlases ? data.atlases.length : 0;
-            const scaleFactors = data.atlases ? [...new Set(data.atlases.map(a => a.scale))].length : 0;
-            
-            document.getElementById('totalImages').textContent = totalImages;
-            document.getElementById('totalAtlases').textContent = totalAtlases;
-            document.getElementById('scaleFactors').textContent = scaleFactors;
-            
-            // Display atlas endpoints
-            const atlasEndpointsDiv = document.getElementById('atlasEndpoints');
-            if (data.atlases && data.atlases.length > 0) {
-                // Group by scale
-                const byScale = {};
-                data.atlases.forEach(atlas => {
-                    if (!byScale[atlas.scale]) {
-                        byScale[atlas.scale] = [];
-                    }
-                    byScale[atlas.scale].push(atlas);
-                });
-                
-                let html = '<h3 style="margin-top: 20px; margin-bottom: 15px;">Atlas Files:</h3>';
-                Object.keys(byScale).sort((a, b) => parseInt(a) - parseInt(b)).forEach(scale => {
-                    const atlases = byScale[scale];
-                    html += `<div style="margin-bottom: 10px;">
-                        <strong>Scale ${scale}x (${atlases.length} atlas):</strong><br>`;
-                    atlases.forEach((atlas, idx) => {
-                        const filename = `atlas/${idx}.png`;
-                        html += `<div class="api-endpoint" style="margin: 5px 0;">
-                            <code>${filename}</code>
-                            <a href="${filename}" target="_blank">View</a>
-                        </div>`;
-                    });
-                    html += '</div>';
-                });
-                atlasEndpointsDiv.innerHTML = html;
-            }
-            
-            // Display image gallery
-            const gallery = document.getElementById('gallery');
-            if (!data.mapping || data.mapping.length === 0) {
-                gallery.innerHTML = '<p style="text-align: center; padding: 40px;">No images found in atlas.</p>';
-                return;
-            }
-            
-            data.mapping.forEach((metadata, index) => {
-                const card = document.createElement('div');
-                card.className = 'image-card';
-                
-                // Find the first atlas containing this image (highest scale)
-                let atlasIndex = -1;
-                for (let i = 0; i < data.atlases.length; i++) {
-                    if (data.atlases[i].uv && data.atlases[i].uv[index] !== undefined) {
-                        atlasIndex = i;
-                        break;
-                    }
-                }
-                
-                const imageSrc = atlasIndex !== -1 ? `atlas/${atlasIndex}.png` : 'placeholder.png';
-                const title = metadata.title || `Image ${index + 1}`;
-                const url = metadata.url || '';
-                
-                card.innerHTML = `
-                    <img src="${imageSrc}" alt="${title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23333%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23fff%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E'">
-                    <div class="image-info">
-                        <div class="image-title">${title}</div>
-                        ${url ? `<div class="image-url">🔗 ${url}</div>` : ''}
+    <main class="main-content">
+        <div class="content-grid">
+            <aside class="sidebar">
+                <div class="api-section">
+                    <h2>API Endpoints</h2>
+                    <div class="api-endpoint">
+                        <code id="atlasUrl">atlas.json</code>
+                        <a href="atlas.json" target="_blank">View JSON</a>
                     </div>
-                `;
-                
-                if (url) {
-                    card.style.cursor = 'pointer';
-                    card.onclick = () => window.open(url, '_blank');
-                }
-                
-                gallery.appendChild(card);
-            });
-        }
-        
-        // Load data on page load
-        window.addEventListener('DOMContentLoaded', loadAtlasData);
-    </script>
+                    <div id="atlasEndpoints"></div>
+                </div>
+            </aside>
+            
+            <section class="gallery-section">
+                <h2>Image Gallery</h2>
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading atlas data...</p>
+                </div>
+                <div id="error" class="error" style="display: none;"></div>
+                <div id="gallery" class="gallery"></div>
+            </section>
+        </div>
+    </main>
+    
+    <script src="app.js"></script>
 </body>
 </html>
