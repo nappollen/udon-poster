@@ -159,8 +159,37 @@ jobs:
       
       - name: Display deployment info
         run: |
+          PAGE_URL="${{ steps.deployment.outputs.page_url }}"
+          
           echo "🎉 Déploiement réussi!"
-          echo "📍 URL: ${{ steps.deployment.outputs.page_url }}"
-          echo "📄 Atlas JSON: ${{ steps.deployment.outputs.page_url }}atlas.json"
+          echo "📍 URL: $PAGE_URL"
+          echo "📄 Atlas JSON: ${PAGE_URL}atlas.json"
           echo ""
           echo "Utilisez cette URL dans votre monde VRChat!"
+          
+          # Ajouter au résumé GitHub Actions avec mise en forme riche
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🚀 Déploiement sur GitHub Pages réussi!
+          
+          ### 🌐 URLs disponibles
+          
+          | Type | URL |
+          |------|-----|
+          | **Site web** | [$PAGE_URL]($PAGE_URL) |
+          | **API Atlas** | [${PAGE_URL}atlas.json](${PAGE_URL}atlas.json) |
+          
+          ### 🎮 Utilisation dans VRChat
+          
+          \`\`\`
+          Base URL: $PAGE_URL
+          Atlas API: ${PAGE_URL}atlas.json
+          \`\`\`
+          
+          ### 📥 Téléchargements
+          
+          L'archive ZIP des posters est disponible dans les [**Artifacts**](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) de ce workflow.
+          
+          ---
+          
+          > ✅ **Le site est maintenant en ligne et accessible publiquement!**
+          EOF

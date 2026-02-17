@@ -48,7 +48,7 @@ def progress_callback(step, total, message):
     
     # Afficher aussi comme notice GitHub Actions pour plus de visibilité
     if os.environ.get('GITHUB_ACTIONS') == 'true':
-        print(f"::notice title=Progress {percentage}%::{message}", flush=True)
+        print(f"::notice title=Progression {percentage}%::{message}", flush=True)
 
 
 def generate_atlases_ci(input_folder: str, output_folder: str):
@@ -202,17 +202,29 @@ def generate_static_ci(atlas_folder: str, output_static_folder: str):
     
     atlas_data['metadata']['base_url'] = github_pages_url
     atlas_data['metadata']['ci'] = ci_metadata
+    
+    print(f"✅ Métadonnées CI/CD ajoutées:")
+    print(f"   - Base URL: {github_pages_url}")
+    print(f"   - Commit: {ci_metadata['commit']['short_sha']}")
+    print(f"   - Workflow: {github_workflow} #{github_run_number}")
+    print(f"   - Repository: {github_repo}")
+    
+    # Sauvegarder les données modifiées
+    with open(json_file, 'w', encoding='utf-8') as f:
+        json.dump(atlas_data, f, indent=2, ensure_ascii=False)
+    
+    # Générer la version statique en utilisant la fonction refactorisée avec callback
+    result = generate_static_version(atlas_folder, output_static_folder, progress_callback=progress_callback)
+    
+    github_endgroup()
+    
+    if not result:
+        print("❌ Échec de la génération de la version statique")
+        sys.exit(1)
+    
     # Créer le résumé pour GitHub Actions
     num_atlases = len(result['compressed_data'].get('atlases', []))
     num_images = len(result['compressed_data'].get('mapping', []))
-    
-    # Récupérer l'URL GitHub Pages
-    github_repo = os.environ.get('GITHUB_REPOSITORY', '')
-    github_pages_url = ''
-    if github_repo:
-        parts = github_repo.split('/')
-        if len(parts) == 2:
-            github_pages_url = f"https://{parts[0]}.github.io/{parts[1]}/"
     
     summary = f"""## 📦 Version statique générée
     
@@ -233,26 +245,6 @@ def generate_static_ci(atlas_folder: str, output_static_folder: str):
     
     github_summary(summary)
     github_output('atlas_url', f"{github_pages_url}atlas.json")
-    
-    
-    print(f"✅ Métadonnées CI/CD ajoutées:")
-    print(f"   - Base URL: {github_pages_url}")
-    print(f"   - Commit: {ci_metadata['commit']['short_sha']}")
-    print(f"   - Workflow: {github_workflow} #{github_run_number}")
-    print(f"   - Repository: {github_repo}")
-    
-    # Sauvegarder les données modifiées
-    with open(json_file, 'w', encoding='utf-8') as f:
-        json.dump(atlas_data, f, indent=2, ensure_ascii=False)
-    
-    # Générer la version statique en utilisant la fonction refactorisée avec callback
-    result = generate_static_version(atlas_folder, output_static_folder, progress_callback=progress_callback)
-    
-    github_endgroup()
-    
-    if not result:
-        print("❌ Échec de la génération de la version statique")
-        sys.exit(1)
     
     return result
 
