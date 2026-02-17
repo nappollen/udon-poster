@@ -16,10 +16,11 @@ permissions:
 # Éviter les exécutions concurrentes
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
-  generate-and-deploy:
+  generate-atlas:
+    name: Generate Atlas
     runs-on: ubuntu-latest
     
     steps:
@@ -83,13 +84,61 @@ jobs:
             echo "⚠️ Aucun dossier public/public/ trouvé"
           fi
       
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+      - name: Upload static output
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-static
+          path: main/Generator/output_static
+          retention-days: 90
+
+  create-archive:
+    name: Create Atlas Archive
+    needs: generate-atlas
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download static output
+        uses: actions/download-artifact@v4
+        with:
+          name: atlas-static
+          path: atlas-static
       
-      - name: Upload artifact
+      - name: Create ZIP archive
+        run: |
+          cd atlas-static
+          zip -r ../atlas.zip .
+          cd ..
+          echo "📦 Archive créée: $(du -h atlas.zip | cut -f1)"
+      
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-zip
+          path: atlas.zip
+          retention-days: 90
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    needs: generate-atlas
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download static output
+        uses: actions/download-artifact@v4
+        with:
+          name: atlas-static
+          path: static-output
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'main/Generator/output_static'
+          path: static-output
       
       - name: Deploy to GitHub Pages
         id: deployment
@@ -98,7 +147,7 @@ jobs:
       - name: Display deployment info
         run: |
           echo "🎉 Déploiement réussi!"
-          echo "📍 URL de base: ${{ steps.deployment.outputs.page_url }}"
+          echo "📍 URL: ${{ steps.deployment.outputs.page_url }}"
           echo "📄 Atlas JSON: ${{ steps.deployment.outputs.page_url }}atlas.json"
           echo ""
           echo "Utilisez cette URL dans votre monde VRChat!"
