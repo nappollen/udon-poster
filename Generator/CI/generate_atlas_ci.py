@@ -65,6 +65,7 @@ def generate_atlases_ci(input_folder: str, output_folder: str):
     sys.path.insert(0, str(Path(__file__).parent.parent))
     
     from generate_posters import main as generate_atlases
+    import json
     
     print(f"📂 Input folder: {input_folder}")
     print(f"📂 Output folder: {output_folder}")
@@ -74,6 +75,36 @@ def generate_atlases_ci(input_folder: str, output_folder: str):
         print(f"❌ Error: Folder '{input_folder}' does not exist!")
         github_endgroup()
         sys.exit(1)
+    
+    # Load configuration from manifest.json if it exists
+    max_atlas_size = 2048  # Default
+    padding = 2  # Default
+    max_image_size = None  # Default (will use max_atlas_size)
+    
+    manifest_file = Path(input_folder) / 'manifest.json'
+    if manifest_file.exists():
+        try:
+            with open(manifest_file, 'r', encoding='utf-8') as f:
+                manifest = json.load(f)
+            
+            # Check if metadata contains generation parameters
+            if 'metadata' in manifest:
+                metadata = manifest['metadata']
+                
+                if 'max_atlas_size' in metadata:
+                    max_atlas_size = int(metadata['max_atlas_size'])
+                    print(f"📐 Using max_atlas_size from manifest: {max_atlas_size}")
+                
+                if 'padding' in metadata:
+                    padding = int(metadata['padding'])
+                    print(f"📐 Using padding from manifest: {padding}")
+                
+                if 'max_image_size' in metadata:
+                    max_image_size = int(metadata['max_image_size'])
+                    print(f"📐 Using max_image_size from manifest: {max_image_size}")
+        except Exception as e:
+            print(f"⚠️ Warning: Could not read generation parameters from manifest.json: {e}")
+            print(f"   Using default values instead")
     
     # Count images
     image_files = [
@@ -87,8 +118,15 @@ def generate_atlases_ci(input_folder: str, output_folder: str):
         github_endgroup()
         sys.exit(1)
     
-    # Generate atlases using refactored function with callback
-    atlas_data = generate_atlases(input_folder, output_folder, progress_callback=progress_callback)
+    # Generate atlases using refactored function with callback and configuration
+    atlas_data = generate_atlases(
+        input_folder, 
+        output_folder, 
+        max_atlas_size=max_atlas_size,
+        padding=padding,
+        max_image_size=max_image_size,
+        progress_callback=progress_callback
+    )
     
     github_endgroup()
     
