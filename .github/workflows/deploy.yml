@@ -10,10 +10,10 @@ permissions:
   id-token: write
 
 jobs:
-  make-atlas:
-    uses: nappollen/udon-poster/.github/workflows/generate-atlas.yml@main
+  deploy:
+    uses: nappollen/udon-poster/.github/workflows/deploy.yml@main
     with:
-      input-path: "images"
+      input: "images"
     permissions:
       contents: read
       pages: write
