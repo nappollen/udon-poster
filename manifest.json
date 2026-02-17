@@ -47,6 +47,7 @@
     "hello": "world",
     "max_atlas_size": 2048,
     "padding": 0,
-    "max_image_size": 1024
+    "max_image_size": 1024,
+    "fastload": true
   }
 }
